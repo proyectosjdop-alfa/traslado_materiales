@@ -19,6 +19,7 @@
         <h1>Acceso Traslados</h1>
     </header>
     <div class="card">
+        <div id="login-error" style="display: none; color: #ff4d4d; text-align: center; margin-bottom: 10px; font-size: 0.9rem;">Contraseña incorrecta</div>
         <label>Sector:</label>
         <select id="user">
             <option value="">Seleccione...</option>
@@ -72,19 +73,30 @@
             <div id="lista-previa"></div>
         </div>
 
-        <button type="button" class="btn-enviar" onclick="abrirFirma()">FIRMAR Y GENERAR PDF</button>
+        <button type="button" class="btn-enviar" onclick="abrirFirma()">PASAR A FIRMAS Y GENERAR</button>
     </form>
 </div>
 
-<div id="modal-firma" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; justify-content:center; align-items:center; flex-direction:column;">
-    <div style="background:white; padding:20px; border-radius:10px; text-align:center; width:90%; max-width:400px;">
-        <h3 style="color:black; margin-bottom:10px;">Firma del que entrega</h3>
-        <canvas id="canvas-firma" style="border:2px solid #000; background:#fff; width:100%; height:200px; touch-action:none;"></canvas>
-        <div style="margin-top:15px; display:flex; gap:10px;">
-            <button class="btn-secundario" style="color:black; border-color:black;" onclick="limpiarFirma()">LIMPIAR</button>
-            <button class="btn-enviar" style="margin:0;" onclick="finalizarYGenerar()">GUARDAR Y GENERAR</button>
+<div id="modal-firma" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:2000; justify-content:center; align-items:center; overflow-y: auto;">
+    <div style="background:white; padding:15px; border-radius:10px; text-align:center; width:95%; max-width:450px; margin: 20px auto;">
+        <h2 style="color:#1b2a36; margin-bottom:15px; font-size: 1.2rem;">Panel de Firmas</h2>
+        
+        <div style="margin-bottom: 20px;">
+            <p style="color:black; font-weight:bold; font-size:0.9rem; margin-bottom:5px;">Firma: Entregado por (Obligatorio)</p>
+            <canvas id="canvas-entrega" style="border:2px solid #333; background:#fff; width:100%; height:130px; touch-action:none; border-radius:5px;"></canvas>
+            <button type="button" onclick="limpiarFirma('entrega')" style="margin-top:5px; padding:5px 10px; font-size:0.7rem; cursor:pointer;">Limpiar Firma Entrega</button>
         </div>
-        <button style="margin-top:10px; background:none; border:none; color:red; cursor:pointer;" onclick="cerrarFirma()">Cancelar</button>
+
+        <div style="margin-bottom: 20px;">
+            <p style="color:black; font-weight:bold; font-size:0.9rem; margin-bottom:5px;">Firma: Recibido por (Opcional)</p>
+            <canvas id="canvas-recibe" style="border:2px solid #333; background:#fff; width:100%; height:130px; touch-action:none; border-radius:5px;"></canvas>
+            <button type="button" onclick="limpiarFirma('recibe')" style="margin-top:5px; padding:5px 10px; font-size:0.7rem; cursor:pointer;">Limpiar Firma Recibe</button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="btn-enviar" style="margin:0; width:100%;" onclick="finalizarYGenerar()">GUARDAR Y GENERAR PDF</button>
+            <button style="background:none; border:none; color:#777; cursor:pointer; text-decoration:underline;" onclick="cerrarFirma()">Regresar al formulario</button>
+        </div>
     </div>
 </div>
 
