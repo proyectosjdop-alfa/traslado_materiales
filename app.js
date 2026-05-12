@@ -227,7 +227,7 @@ async function generarPDFTraslado(firmaEntrega, firmaRecibe) {
     doc.setFontSize(8);
     doc.text("Código:", 147, 16); 
     doc.text("Versión:", 147, 26); doc.text("1", 172, 26); 
-    doc.text("Fecha:", 147, 36); doc.text(new Date().toLocaleDateString(), 172, 36);
+    doc.text("Fecha:", 147, 36);
 
     // 3. INFORMACIÓN GENERAL
     doc.setFontSize(9); doc.setFont("helvetica", "bold");
