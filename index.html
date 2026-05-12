@@ -16,10 +16,10 @@
         <div style="background-color: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: center;">
             <img src="https://github.com/proyectosjdop-alfa/app_poda/blob/main/imagenes/UTCD%20Vertical.png?raw=true" alt="Logo ENEE" style="max-width: 250px; height: auto;">
         </div>
-        <h1>Traslado de Materiales</h1>
+        <h1>Acceso al Sistema</h1>
     </header>
-    <div class="card">
-        <label>Sector:</label>
+    <div class="card" style="padding: 20px;">
+        <label>Seleccione su Sector:</label>
         <select id="user">
             <option value="">Seleccione...</option>
             <option value="brus laguna">BRUS LAGUNA</option>
@@ -36,8 +36,10 @@
             <option value="tegucigalpa">TEGUCIGALPA</option>
             <option value="tocoa">TOCOA</option>
         </select>
+
         <label>Contraseña:</label>
         <input type="password" id="pass" placeholder="Ingrese su contraseña">
+        
         <button class="btn-enviar" onclick="validarLogin()">INGRESAR</button>
         <p id="login-error" style="color: #e74c3c; font-size: 0.8rem; margin-top: 10px; display: none;">Credenciales incorrectas</p>
     </div>
@@ -53,14 +55,14 @@
     </header>
 
     <form id="form-traslado">
-        <label>Encargado de traslado:</label>
+        <label>Encargado de asignar materiales:</label>
         <input type="text" id="resp-traslado" placeholder="Nombre completo">
 
-        <label>Cuadrilla que recibe material:</label>
-        <input type="text" id="cuadrilla-recibe" placeholder="Identificación de la cuadrilla">
+        <label>Cuadrilla que recibe materiales:</label>
+        <input type="text" id="cuadrilla-recibe" placeholder="Nombre de cuadrilla">
 
-        <div class="card" style="margin-top: 15px; border: 1px solid var(--accent);">
-            <h3 style="color: var(--accent); font-size: 0.9rem; margin-bottom: 10px;">AGREGAR MATERIAL</h3>
+        <div class="card" style="margin-top: 15px; border: 1px solid var(--accent); text-align: left;">
+            <h3 style="color: var(--accent); font-size: 0.9rem; margin-bottom: 10px; text-align: center;">DETALLE DE MATERIAL</h3>
             
             <label>Tipo de Material:</label>
             <select id="filtro-tipo" onchange="filtrarMateriales()">
@@ -69,7 +71,7 @@
 
             <label>Material:</label>
             <select id="seleccion-material">
-                <option value="">Seleccione un tipo primero</option>
+                <option value="">Primero seleccione tipo...</option>
             </select>
 
             <label>Cantidad:</label>
@@ -79,10 +81,19 @@
         </div>
 
         <label style="margin-top: 20px; display: block;">Vista Previa de Materiales:</label>
-        <div id="lista-previa" style="margin-top: 10px;">
+        <div class="card" style="padding: 10px; background: #1b2a36;">
+            <div style="display: grid; grid-template-columns: 2fr 4fr 2fr 1fr; gap: 5px; border-bottom: 1px solid var(--accent); padding-bottom: 5px; font-size: 0.7rem; color: var(--accent); font-weight: bold; text-align: center;">
+                <div>CÓDIGO</div>
+                <div>DESCRIPCIÓN</div>
+                <div>CANT.</div>
+                <div></div>
             </div>
+            <div id="lista-previa" style="margin-top: 10px;">
+                <p style="font-size: 0.7rem; color: #9aa7b1; text-align: center;">No hay materiales agregados</p>
+            </div>
+        </div>
 
-        <button type="button" class="btn-enviar" onclick="generarPDFTraslado()">GENERAR PDF</button>
+        <button type="button" class="btn-enviar" onclick="generarPDFTraslado()">GENERAR INFORME PDF</button>
     </form>
 </div>
 
