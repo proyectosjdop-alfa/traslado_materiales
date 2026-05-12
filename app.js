@@ -8,7 +8,7 @@ var canvasRecibe, ctxRecibe;
 var dibujando = false;
 
 const USUARIOS = {
-    "admin": "admin123", "brus laguna": "enee2026", "choluteca": "enee2026", "comayagua": "enee2026",
+    "brus laguna": "enee2026", "choluteca": "enee2026", "comayagua": "enee2026",
     "danli": "enee2026", "el progreso": "enee2026", "juticalpa": "enee2026", "la ceiba": "enee2026",
     "san pedro sula": "enee2026", "santa barbara": "enee2026", "santa rosa": "enee2026",
     "santa cruz": "enee2026", "tegucigalpa": "enee2026", "tocoa": "enee2026"
@@ -78,7 +78,7 @@ function agregarALista() {
     if (!item || isNaN(cant) || cant <= 0) return alert("Datos inválidos");
     
     if (cant > item.stock) {
-        alert(`AVISO: La cantidad (${cant}) supera el stock (${item.stock}).`);
+        alert(`AVISO: La cantidad (${cant}) supera el stock (${item.stock}). Se registrará por posible desfase.`);
     }
     
     listaSalida.push({ ...item, cantidadPedida: cant });
