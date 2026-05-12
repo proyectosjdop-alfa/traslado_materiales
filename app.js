@@ -131,7 +131,7 @@ async function generarPDFTraslado() {
     const doc = new jsPDF();
     const encargado = document.getElementById('resp-traslado').value;
     const cuadrilla = document.getElementById('cuadrilla-recibe').value;
-    const logoUrl = "https://github.com/proyectosjdop-alfa/app_poda/blob/main/imagenes/UTCD%20Vertical.png?raw=true";
+    const logoUrl = "https://raw.github.com/proyectosjdop-alfa/traslado_materiales/blob/main/imagenes/UTCD%20Vertical.png";
 
     if (listaSalida.length === 0) {
         alert("Debe agregar al menos un material a la lista.");
