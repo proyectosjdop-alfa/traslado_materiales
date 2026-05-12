@@ -14,6 +14,7 @@ const USUARIOS = {
     "santa cruz": "enee2026", "tegucigalpa": "enee2026", "tocoa": "enee2026"
 };
 
+// 1. MODIFICADO: Ahora extrae también la unidad (índice 4 en el CSV de Sheets)
 async function cargarDatosGoogleSheets() {
     const sheetID = "15FfY5O9CXIBA0RUcwqJMqHLbrOFRmu4ssgZ9xhPa44A";
     const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:csv`;
@@ -23,7 +24,13 @@ async function cargarDatosGoogleSheets() {
         const filas = data.split('\n').slice(1);
         inventarioCompleto = filas.map(f => {
             const c = f.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(x => x.replace(/"/g, ''));
-            return { codigo: c[2], nombre: c[3], stock: parseInt(c[5]) || 0, tipo: c[6] };
+            return { 
+                codigo: c[2], 
+                nombre: c[3], 
+                unidad: c[4], // <--- Nueva columna de Unidad
+                stock: parseInt(c[5]) || 0, 
+                tipo: c[6] 
+            };
         });
         llenarTipos();
     } catch (e) { alert("Error cargando Inventario"); }
@@ -32,15 +39,20 @@ async function cargarDatosGoogleSheets() {
 function validarLogin() {
     const u = document.getElementById('user').value.toLowerCase();
     const p = document.getElementById('pass').value;
+    const errorDiv = document.getElementById('login-error');
+
     if (USUARIOS[u] && USUARIOS[u] === p) {
+        if(errorDiv) errorDiv.style.display = 'none';
         sectorActivo = u.toUpperCase();
         document.getElementById('login-container').style.display = 'none';
         document.getElementById('form-traslado-container').style.display = 'block';
         document.getElementById('user-display').innerText = "SECTOR: " + sectorActivo;
         cargarDatosGoogleSheets();
-        // Un pequeño retraso para asegurar que los elementos existan antes de configurar las firmas
         setTimeout(prepararCanvases, 500); 
-    } else { document.getElementById('login-error').style.display = 'block'; }
+    } else { 
+        if(errorDiv) errorDiv.style.display = 'block';
+        document.getElementById('pass').value = "";
+    }
 }
 
 function llenarTipos() {
@@ -55,7 +67,7 @@ function filtrarMateriales() {
     const select = document.getElementById('seleccion-material');
     select.innerHTML = '<option value="">Seleccione Material...</option>';
     inventarioCompleto.filter(i => i.tipo === tipo).forEach(i => {
-        select.innerHTML += `<option value="${i.codigo}">[${i.codigo}] - ${i.nombre} (Stock: ${i.stock})</option>`;
+        select.innerHTML += `<option value="${i.codigo}">[${i.codigo}] - ${i.nombre} (${i.unidad})</option>`;
     });
 }
 
@@ -64,39 +76,48 @@ function agregarALista() {
     const cant = parseInt(document.getElementById('cantidad-input').value);
     const item = inventarioCompleto.find(i => i.codigo === cod);
     if (!item || isNaN(cant) || cant <= 0) return alert("Datos inválidos");
+    
     if (cant > item.stock) {
-        alert(`AVISO: La cantidad (${cant}) supera el stock (${item.stock}). Se registrará por posible desfase.`);
+        alert(`AVISO: La cantidad (${cant}) supera el stock (${item.stock}).`);
     }
+    
     listaSalida.push({ ...item, cantidadPedida: cant });
     renderLista();
     document.getElementById('cantidad-input').value = "";
 }
 
+// 2. MODIFICADO: Vista previa con ITEM y UNIDAD
 function renderLista() {
     const div = document.getElementById('lista-previa');
     if (listaSalida.length === 0) {
         div.innerHTML = '<p style="font-size: 0.7rem; color: #9aa7b1; text-align: center;">Lista vacía</p>';
         return;
     }
-    div.innerHTML = listaSalida.map((m, index) => `
-        <div style="display: grid; grid-template-columns: 2fr 4fr 2fr 1fr; gap: 5px; align-items: center; border-bottom: 1px solid #2c3e50; padding: 8px 0; font-size: 0.7rem; text-align: center;">
+    // Encabezado de la lista previa para que se entienda mejor
+    let html = `
+        <div style="display: grid; grid-template-columns: 0.5fr 1fr 2fr 1fr 1fr 0.5fr; gap: 5px; align-items: center; border-bottom: 2px solid var(--accent); padding-bottom: 5px; font-size: 0.65rem; font-weight: bold; text-align: center;">
+            <div>ITEM</div><div>CÓDIGO</div><div>DESCRIPCIÓN</div><div>UNIDAD</div><div>CANT.</div><div></div>
+        </div>`;
+
+    html += listaSalida.map((m, index) => `
+        <div style="display: grid; grid-template-columns: 0.5fr 1fr 2fr 1fr 1fr 0.5fr; gap: 5px; align-items: center; border-bottom: 1px solid #2c3e50; padding: 8px 0; font-size: 0.7rem; text-align: center;">
+            <div style="color: #9aa7b1;">${index + 1}</div>
             <div style="color: var(--accent); font-weight: bold;">${m.codigo}</div>
             <div style="text-align: left; padding-left: 5px;">${m.nombre}</div>
-            <div>${m.cantidadPedida}</div>
+            <div>${m.unidad}</div>
+            <div style="font-weight: bold;">${m.cantidadPedida}</div>
             <div onclick="quitar(${index})" style="color:#e74c3c; cursor:pointer;"><i class="fas fa-trash"></i></div>
         </div>
     `).join('');
+    div.innerHTML = html;
 }
 
 function quitar(idx) { listaSalida.splice(idx, 1); renderLista(); }
 
-// ========================================
-// LÓGICA DE FIRMAS REFORZADA (MOUSE Y TOUCH)
-// ========================================
+// --- Lógica de Firmas (Sin cambios significativos) ---
 function prepararCanvases() {
     canvasEntrega = document.getElementById('canvas-entrega');
     ctxEntrega = configurarCanvas(canvasEntrega);
-    
     canvasRecibe = document.getElementById('canvas-recibe');
     ctxRecibe = configurarCanvas(canvasRecibe);
 }
@@ -104,67 +125,32 @@ function prepararCanvases() {
 function configurarCanvas(canv) {
     if(!canv) return;
     const context = canv.getContext('2d');
-    
-    // Ajustar el tamaño interno del canvas al tamaño visual
     canv.width = canv.offsetWidth;
     canv.height = canv.offsetHeight;
-    
     context.lineWidth = 2;
     context.lineCap = 'round';
     context.strokeStyle = '#000';
-
-    function obtenerPos(e) {
+    const obtenerPos = (e) => {
         const rect = canv.getBoundingClientRect();
-        // Detectar si es touch o mouse
         const clienteX = e.touches ? e.touches[0].clientX : e.clientX;
         const clienteY = e.touches ? e.touches[0].clientY : e.clientY;
-        return {
-            x: clienteX - rect.left,
-            y: clienteY - rect.top
-        };
+        return { x: clienteX - rect.left, y: clienteY - rect.top };
     }
-
-    function iniciar(e) {
-        dibujando = true;
-        const p = obtenerPos(e);
-        context.beginPath();
-        context.moveTo(p.x, p.y);
-        // Evitar que la pantalla se mueva al firmar en celular
-        if (e.touches) e.preventDefault();
-    }
-
-    function mover(e) {
-        if (!dibujando) return;
-        const p = obtenerPos(e);
-        context.lineTo(p.x, p.y);
-        context.stroke();
-        if (e.touches) e.preventDefault();
-    }
-
-    function detener() {
-        dibujando = false;
-    }
-
-    // Eventos Mouse
+    const iniciar = (e) => { dibujando = true; const p = obtenerPos(e); context.beginPath(); context.moveTo(p.x, p.y); if(e.touches) e.preventDefault(); }
+    const mover = (e) => { if(!dibujando) return; const p = obtenerPos(e); context.lineTo(p.x, p.y); context.stroke(); if(e.touches) e.preventDefault(); }
     canv.addEventListener('mousedown', iniciar);
     canv.addEventListener('mousemove', mover);
-    window.addEventListener('mouseup', detener);
-
-    // Eventos Touch (Celulares/Tablets)
-    canv.addEventListener('touchstart', iniciar, { passive: false });
-    canv.addEventListener('touchmove', mover, { passive: false });
-    canv.addEventListener('touchend', detener);
-
+    canv.addEventListener('touchstart', iniciar, {passive: false});
+    canv.addEventListener('touchmove', mover, {passive: false});
+    window.addEventListener('mouseup', () => dibujando = false);
+    window.addEventListener('touchend', () => dibujando = false);
     return context;
 }
 
 function abrirFirma() {
     if(listaSalida.length === 0) return alert("Agregue materiales");
     document.getElementById('modal-firma').style.display = 'flex';
-    // Re-ajustar tamaño por si el modal cambió algo
-    setTimeout(() => {
-        prepararCanvases();
-    }, 200);
+    setTimeout(prepararCanvases, 200);
 }
 
 function cerrarFirma() { document.getElementById('modal-firma').style.display = 'none'; }
@@ -175,30 +161,21 @@ function limpiarFirma(tipo) {
 }
 
 function finalizarYGenerar() {
-    const entregaVacia = isCanvasVacio(canvasEntrega);
-    if(entregaVacia) return alert("La firma del que entrega es obligatoria.");
-
-    const firmaEntregaData = canvasEntrega.toDataURL('image/png');
-    const recibeVacia = isCanvasVacio(canvasRecibe);
-    const firmaRecibeData = recibeVacia ? null : canvasRecibe.toDataURL('image/png');
-
+    if (isCanvasVacio(canvasEntrega)) return alert("La firma del que entrega es obligatoria.");
+    const fEnt = canvasEntrega.toDataURL('image/png');
+    const fRec = isCanvasVacio(canvasRecibe) ? null : canvasRecibe.toDataURL('image/png');
     cerrarFirma();
-    generarPDFTraslado(firmaEntregaData, firmaRecibeData);
+    generarPDFTraslado(fEnt, fRec);
 }
 
 function isCanvasVacio(canv) {
-    const context = canv.getContext('2d');
-    const pixelData = context.getImageData(0, 0, canv.width, canv.height).data;
-    // Revisar si hay algún pixel que no sea transparente
-    for (let i = 0; i < pixelData.length; i += 4) {
-        if (pixelData[i+3] !== 0) return false;
-    }
+    const ctx = canv.getContext('2d');
+    const pixels = ctx.getImageData(0,0,canv.width, canv.height).data;
+    for(let i=3; i<pixels.length; i+=4) { if(pixels[i] !== 0) return false; }
     return true;
 }
 
-// ========================================
-// PDF CON DISEÑO ORIGINAL
-// ========================================
+// 3. MODIFICADO: PDF con nuevas columnas y celdas centradas
 async function generarPDFTraslado(firmaEntrega, firmaRecibe) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -206,30 +183,23 @@ async function generarPDFTraslado(firmaEntrega, firmaRecibe) {
     const cuadrilla = document.getElementById('cuadrilla-recibe').value;
     const logoUrl = "https://raw.githubusercontent.com/proyectosjdop-alfa/traslado_materiales/refs/heads/main/imagenes/UTCD%20Vertical.png";
 
-    // 1. MARCO PERIMETRAL
+    // Marco y Cajetín (Sin cambios)
     doc.setDrawColor(0); doc.setLineWidth(0.5);
     doc.rect(10, 10, 190, 277); 
-
-    // 2. CAJETÍN SUPERIOR
     doc.rect(10, 10, 60, 30); 
     try { doc.addImage(logoUrl, 'PNG', 15, 13, 50, 24); } catch (e) {}
-
     doc.rect(70, 10, 75, 30);
     doc.setFont("helvetica", "bold"); doc.setFontSize(12);
     doc.text("TRASLADO DE MATERIALES", 107.5, 22, {align: 'center'});
     doc.setFontSize(10);
     doc.text(`SECTOR ${sectorActivo}`, 107.5, 28, {align: 'center'});
-
     doc.rect(145, 10, 55, 30); 
-    doc.line(170, 10, 170, 40);
-    doc.line(145, 20, 200, 20);
-    doc.line(145, 30, 200, 30);
+    doc.line(170, 10, 170, 40); doc.line(145, 20, 200, 20); doc.line(145, 30, 200, 30);
     doc.setFontSize(8);
-    doc.text("Código:", 147, 16); 
-    doc.text("Versión:", 147, 26); doc.text("1", 172, 26); 
-    doc.text("Fecha:", 147, 36);
+    doc.text("Código:", 147, 16); doc.text("Versión:", 147, 26); doc.text("1", 172, 26); 
+    doc.text("Fecha:", 147, 36); doc.text(new Date().toLocaleDateString(), 172, 36);
 
-    // 3. INFORMACIÓN GENERAL
+    // Datos generales
     doc.setFontSize(9); doc.setFont("helvetica", "bold");
     doc.text("DATOS DEL TRASLADO:", 15, 48);
     doc.setFont("helvetica", "normal");
@@ -238,25 +208,38 @@ async function generarPDFTraslado(firmaEntrega, firmaRecibe) {
     doc.text(`CUADRILLA / RECIBE: ${cuadrilla.toUpperCase()}`, 15, 66);
     doc.line(10, 70, 200, 70);
 
-    // 4. TABLA
+    // Tabla de Materiales (AQUÍ ESTÁN LOS CAMBIOS)
+    const tablaBody = listaSalida.map((m, index) => [
+        index + 1,        // ITEM
+        m.codigo,         // CÓDIGO
+        m.nombre,         // DESCRIPCIÓN
+        m.unidad,         // UNIDAD
+        m.cantidadPedida  // CANTIDAD
+    ]);
+
     doc.autoTable({
         startY: 75,
-        head: [['CÓDIGO', 'DESCRIPCIÓN DEL MATERIAL', 'CANTIDAD']],
-        body: listaSalida.map(m => [m.codigo, m.nombre, m.cantidadPedida]),
+        head: [['ITEM', 'CÓDIGO', 'DESCRIPCIÓN DEL MATERIAL', 'UNIDAD', 'CANTIDAD']],
+        body: tablaBody,
         theme: 'grid',
-        headStyles: { fillColor: [244, 196, 48], textColor: 0, halign: 'center' },
+        headStyles: { fillColor: [244, 196, 48], textColor: 0, halign: 'center', fontSize: 9 },
+        columnStyles: { 
+            0: { halign: 'center', cellWidth: 15 }, // Centrar ITEM
+            1: { halign: 'center', cellWidth: 30 }, // Centrar Código
+            2: { halign: 'left' },                  // Descripción a la izquierda
+            3: { halign: 'center', cellWidth: 20 }, // Centrar Unidad
+            4: { halign: 'center', cellWidth: 25 }  // Centrar Cantidad
+        },
+        styles: { fontSize: 8 },
         margin: { left: 15, right: 15 }
     });
 
-    // 5. SECCIÓN DE FIRMAS
+    // Firmas
     const finalY = 270;
     doc.addImage(firmaEntrega, 'PNG', 35, finalY - 25, 40, 20);
     doc.line(30, finalY, 90, finalY);
     doc.text("ENTREGADO POR (ASIGNADO)", 60, finalY + 5, {align: 'center'});
-    
-    if(firmaRecibe) {
-        doc.addImage(firmaRecibe, 'PNG', 125, finalY - 25, 40, 20);
-    }
+    if(firmaRecibe) { doc.addImage(firmaRecibe, 'PNG', 125, finalY - 25, 40, 20); }
     doc.line(120, finalY, 180, finalY);
     doc.text("RECIBIDO CONFORME (CUADRILLA)", 150, finalY + 5, {align: 'center'});
 
