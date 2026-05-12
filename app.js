@@ -9,6 +9,7 @@ const USUARIOS = {
     "santa cruz": "enee2026", "tegucigalpa": "enee2026", "tocoa": "enee2026"
 };
 
+// Carga el inventario desde Google Sheets
 async function cargarDatosGoogleSheets() {
     const sheetID = "15FfY5O9CXIBA0RUcwqJMqHLbrOFRmu4ssgZ9xhPa44A";
     const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:csv`;
@@ -81,6 +82,9 @@ function renderLista() {
 
 function quitar(idx) { listaSalida.splice(idx, 1); renderLista(); }
 
+// ============================================================
+// FUNCIÓN PARA GENERAR EL PDF BASADO EN EL DISEÑO EXCEL
+// ============================================================
 async function generarPDFTraslado() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -88,41 +92,49 @@ async function generarPDFTraslado() {
     const cuadrilla = document.getElementById('cuadrilla-recibe').value;
     const logoUrl = "https://raw.githubusercontent.com/proyectosjdop-alfa/traslado_materiales/refs/heads/main/imagenes/UTCD%20Vertical.png";
 
-    if (listaSalida.length === 0) return alert("Agregue materiales");
+    if (listaSalida.length === 0) return alert("Agregue materiales a la lista");
 
-    // 1. MARCO EXTERIOR
-    doc.setDrawColor(0); doc.setLineWidth(0.5);
+    // 1. MARCO PERIMETRAL (Rectángulo que encierra toda la hoja)
+    doc.setDrawColor(0); 
+    doc.setLineWidth(0.5);
     doc.rect(10, 10, 190, 277); 
 
-    // 2. CAJETÍN DE ENCABEZADO (Cuadrícula superior)
-    // Logo (Celda Izquierda)
-    doc.rect(10, 10, 60, 30); 
-    try { doc.addImage(logoUrl, 'PNG', 20, 13, 40, 24); } catch (e) {}
+    // 2. CAJETÍN SUPERIOR (Dividido en 3 partes como el Excel)
+    // Parte 1: LOGO (Izquierda)
+    doc.rect(10, 10, 50, 30); 
+    try { doc.addImage(logoUrl, 'PNG', 15, 13, 40, 24); } catch (e) {}
 
-    // Título Central (Celda Centro)
-    doc.rect(70, 10, 80, 30);
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10);
-    doc.text("UNIDAD TÉCNICA DE CONTROL", 110, 20, {align: 'center'});
-    doc.text("DE DISTRIBUCIÓN", 110, 25, {align: 'center'});
-    doc.setFontSize(11);
-    doc.text("TRASLADO DE MATERIALES", 110, 33, {align: 'center'});
+    // Parte 2: TÍTULO Y SECTOR (Centro)
+    doc.rect(60, 10, 85, 30);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("TRASLADO DE MATERIALES", 102.5, 22, {align: 'center'});
+    doc.setFontSize(10);
+    doc.text(`SECTOR ${sectorActivo}`, 102.5, 28, {align: 'center'});
 
-    // Info Derecha (Fecha y Sector)
-    doc.rect(150, 10, 50, 30);
+    // Parte 3: CONTROL (Derecha - Código, Versión, Fecha)
+    doc.rect(145, 10, 55, 30);
     doc.setFontSize(8);
-    doc.text(`FECHA: ${new Date().toLocaleDateString()}`, 155, 18);
-    doc.text(`SECTOR: ${sectorActivo}`, 155, 26);
+    doc.text("Código:", 147, 18); doc.text("N/A", 175, 18); // Puedes cambiar N/A por un código real
+    doc.line(145, 20, 200, 20); // Línea divisoria interna
+    doc.text("Versión:", 147, 24); doc.text("1", 175, 24);
+    doc.line(145, 26, 200, 26); // Línea divisoria interna
+    doc.text("Fecha:", 147, 29); doc.text(new Date().toLocaleDateString(), 175, 29);
 
-    // 3. BLOQUE DE DATOS DEL PERSONAL
-    doc.rect(10, 40, 190, 20);
+    // 3. BLOQUE DE INFORMACIÓN GENERAL
     doc.setFontSize(9);
-    doc.text(`ENCARGADO ASIGNACIÓN: ${encargado.toUpperCase()}`, 15, 48);
-    doc.text(`CUADRILLA / RECIBE: ${cuadrilla.toUpperCase()}`, 15, 55);
+    doc.setFont("helvetica", "bold");
+    doc.text("DATOS DEL TRASLADO:", 15, 48);
+    doc.setFont("helvetica", "normal");
+    doc.text(`FECHA DE EMISIÓN: ${new Date().toLocaleDateString()}`, 15, 54);
+    doc.text(`ENCARGADO ASIGNACIÓN: ${encargado.toUpperCase()}`, 15, 60);
+    doc.text(`CUADRILLA / RECIBE: ${cuadrilla.toUpperCase()}`, 15, 66);
+    doc.line(10, 70, 200, 70); // Línea de cierre del bloque
 
-    // 4. TABLA DE MATERIALES
+    // 4. TABLA DE MATERIALES (Cuerpo del reporte)
     const tablaBody = listaSalida.map(m => [m.codigo, m.nombre, m.cantidadPedida]);
     doc.autoTable({
-        startY: 65,
+        startY: 75,
         head: [['CÓDIGO', 'DESCRIPCIÓN DEL MATERIAL', 'CANTIDAD']],
         body: tablaBody,
         theme: 'grid',
@@ -132,7 +144,7 @@ async function generarPDFTraslado() {
         margin: { left: 10, right: 10 }
     });
 
-    // 5. ÁREA DE FIRMAS
+    // 5. SECCIÓN DE FIRMAS (Al final del marco)
     const finalY = 270;
     doc.line(30, finalY, 90, finalY);
     doc.text("ENTREGADO POR (ASIGNADO)", 60, finalY + 5, {align: 'center'});
@@ -140,5 +152,5 @@ async function generarPDFTraslado() {
     doc.line(120, finalY, 180, finalY);
     doc.text("RECIBIDO CONFORME (CUADRILLA)", 150, finalY + 5, {align: 'center'});
 
-    doc.save(`Traslado_UTCD_${sectorActivo}.pdf`);
+    doc.save(`Traslado_Material_${sectorActivo}.pdf`);
 }
