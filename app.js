@@ -14,7 +14,6 @@ const USUARIOS = {
     "santa cruz": "enee2026", "tegucigalpa": "enee2026", "tocoa": "enee2026"
 };
 
-// 1. MODIFICADO: Ahora extrae también la unidad (índice 4 en el CSV de Sheets)
 async function cargarDatosGoogleSheets() {
     const sheetID = "15FfY5O9CXIBA0RUcwqJMqHLbrOFRmu4ssgZ9xhPa44A";
     const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:csv`;
@@ -27,7 +26,7 @@ async function cargarDatosGoogleSheets() {
             return { 
                 codigo: c[2], 
                 nombre: c[3], 
-                unidad: c[4], // <--- Nueva columna de Unidad
+                unidad: c[4], 
                 stock: parseInt(c[5]) || 0, 
                 tipo: c[6] 
             };
@@ -62,12 +61,13 @@ function llenarTipos() {
     tipos.forEach(t => { if(t) select.innerHTML += `<option value="${t}">${t}</option>`; });
 }
 
+// CORREGIDO: Ahora vuelve a mostrar el Stock en el selector junto con la unidad
 function filtrarMateriales() {
     const tipo = document.getElementById('filtro-tipo').value;
     const select = document.getElementById('seleccion-material');
     select.innerHTML = '<option value="">Seleccione Material...</option>';
     inventarioCompleto.filter(i => i.tipo === tipo).forEach(i => {
-        select.innerHTML += `<option value="${i.codigo}">[${i.codigo}] - ${i.nombre} (${i.unidad})</option>`;
+        select.innerHTML += `<option value="${i.codigo}">[${i.codigo}] - ${i.nombre} (${i.unidad}) - Stock: ${i.stock}</option>`;
     });
 }
 
@@ -86,14 +86,12 @@ function agregarALista() {
     document.getElementById('cantidad-input').value = "";
 }
 
-// 2. MODIFICADO: Vista previa con ITEM y UNIDAD
 function renderLista() {
     const div = document.getElementById('lista-previa');
     if (listaSalida.length === 0) {
         div.innerHTML = '<p style="font-size: 0.7rem; color: #9aa7b1; text-align: center;">Lista vacía</p>';
         return;
     }
-    // Encabezado de la lista previa para que se entienda mejor
     let html = `
         <div style="display: grid; grid-template-columns: 0.5fr 1fr 2fr 1fr 1fr 0.5fr; gap: 5px; align-items: center; border-bottom: 2px solid var(--accent); padding-bottom: 5px; font-size: 0.65rem; font-weight: bold; text-align: center;">
             <div>ITEM</div><div>CÓDIGO</div><div>DESCRIPCIÓN</div><div>UNIDAD</div><div>CANT.</div><div></div>
@@ -114,7 +112,6 @@ function renderLista() {
 
 function quitar(idx) { listaSalida.splice(idx, 1); renderLista(); }
 
-// --- Lógica de Firmas (Sin cambios significativos) ---
 function prepararCanvases() {
     canvasEntrega = document.getElementById('canvas-entrega');
     ctxEntrega = configurarCanvas(canvasEntrega);
@@ -175,7 +172,6 @@ function isCanvasVacio(canv) {
     return true;
 }
 
-// 3. MODIFICADO: PDF con nuevas columnas y celdas centradas
 async function generarPDFTraslado(firmaEntrega, firmaRecibe) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -183,7 +179,6 @@ async function generarPDFTraslado(firmaEntrega, firmaRecibe) {
     const cuadrilla = document.getElementById('cuadrilla-recibe').value;
     const logoUrl = "https://raw.githubusercontent.com/proyectosjdop-alfa/traslado_materiales/refs/heads/main/imagenes/UTCD%20Vertical.png";
 
-    // Marco y Cajetín (Sin cambios)
     doc.setDrawColor(0); doc.setLineWidth(0.5);
     doc.rect(10, 10, 190, 277); 
     doc.rect(10, 10, 60, 30); 
@@ -199,7 +194,6 @@ async function generarPDFTraslado(firmaEntrega, firmaRecibe) {
     doc.text("Código:", 147, 16); doc.text("Versión:", 147, 26); doc.text("1", 172, 26); 
     doc.text("Fecha:", 147, 36); doc.text(new Date().toLocaleDateString(), 172, 36);
 
-    // Datos generales
     doc.setFontSize(9); doc.setFont("helvetica", "bold");
     doc.text("DATOS DEL TRASLADO:", 15, 48);
     doc.setFont("helvetica", "normal");
@@ -208,13 +202,12 @@ async function generarPDFTraslado(firmaEntrega, firmaRecibe) {
     doc.text(`CUADRILLA / RECIBE: ${cuadrilla.toUpperCase()}`, 15, 66);
     doc.line(10, 70, 200, 70);
 
-    // Tabla de Materiales (AQUÍ ESTÁN LOS CAMBIOS)
     const tablaBody = listaSalida.map((m, index) => [
-        index + 1,        // ITEM
-        m.codigo,         // CÓDIGO
-        m.nombre,         // DESCRIPCIÓN
-        m.unidad,         // UNIDAD
-        m.cantidadPedida  // CANTIDAD
+        index + 1,
+        m.codigo,
+        m.nombre,
+        m.unidad,
+        m.cantidadPedida
     ]);
 
     doc.autoTable({
@@ -224,17 +217,16 @@ async function generarPDFTraslado(firmaEntrega, firmaRecibe) {
         theme: 'grid',
         headStyles: { fillColor: [244, 196, 48], textColor: 0, halign: 'center', fontSize: 9 },
         columnStyles: { 
-            0: { halign: 'center', cellWidth: 15 }, // Centrar ITEM
-            1: { halign: 'center', cellWidth: 30 }, // Centrar Código
-            2: { halign: 'left' },                  // Descripción a la izquierda
-            3: { halign: 'center', cellWidth: 20 }, // Centrar Unidad
-            4: { halign: 'center', cellWidth: 25 }  // Centrar Cantidad
+            0: { halign: 'center', cellWidth: 15 },
+            1: { halign: 'center', cellWidth: 30 },
+            2: { halign: 'left' },
+            3: { halign: 'center', cellWidth: 20 },
+            4: { halign: 'center', cellWidth: 25 }
         },
         styles: { fontSize: 8 },
         margin: { left: 15, right: 15 }
     });
 
-    // Firmas
     const finalY = 270;
     doc.addImage(firmaEntrega, 'PNG', 35, finalY - 25, 40, 20);
     doc.line(30, finalY, 90, finalY);
