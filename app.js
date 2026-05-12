@@ -108,18 +108,34 @@ async function generarPDFTraslado() {
     doc.rect(70, 10, 75, 30);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
-    doc.text("TRASLADO DE MATERIALES", 102.5, 22, {align: 'center'});
+    doc.text("TRASLADO DE MATERIALES", 107.5, 22, {align: 'center'});
     doc.setFontSize(10);
-    doc.text(`SECTOR ${sectorActivo}`, 102.5, 28, {align: 'center'});
+    doc.text(`SECTOR ${sectorActivo}`, 107.5, 28, {align: 'center'});
 
     // Parte 3: CONTROL (Derecha - Código, Versión, Fecha)
-    doc.rect(145, 10, 55, 30);
+     // El cuadro principal mide 55 de ancho (25 + 30) y 30 de alto (10 + 10 + 10)
+    doc.rect(145, 10, 55, 30); 
+    
+    // Línea vertical que divide las dos columnas (145 + 25 = 170)
+    doc.line(170, 10, 170, 40);
+
+    // Líneas horizontales para crear las 3 filas de 10mm de alto
+    doc.line(145, 20, 200, 20); // Primera división
+    doc.line(145, 30, 200, 30); // Segunda división
+
     doc.setFontSize(8);
-    doc.text("Código:", 147, 18); doc.text("", 175, 18); // Puedes cambiar N/A por un código real
-    doc.line(145, 20, 200, 20); // Línea divisoria interna
-    doc.text("Versión:", 147, 24); doc.text("1", 175, 24);
-    doc.line(145, 26, 200, 26); // Línea divisoria interna
-    doc.text("Fecha:", 147, 29); doc.text("", 175, 29);
+    
+    // Fila 1: Código
+    doc.text("Código:", 147, 16); 
+    doc.text("", 172, 16); // Espacio vacío columna 2
+    
+    // Fila 2: Versión
+    doc.text("Versión:", 147, 26); 
+    doc.text("1", 172, 26);    // Valor "1" en columna 2
+    
+    // Fila 3: Fecha
+    doc.text("Fecha:", 147, 36); 
+    doc.text("", 172, 36); // Fecha actual en columna 2
 
     // 3. BLOQUE DE INFORMACIÓN GENERAL
     doc.setFontSize(9);
