@@ -38,7 +38,8 @@ function validarLogin() {
         document.getElementById('form-traslado-container').style.display = 'block';
         document.getElementById('user-display').innerText = "SECTOR: " + sectorActivo;
         cargarDatosGoogleSheets();
-        prepararCanvases(); // Inicializa ambos cuadros de firma
+        // Un pequeño retraso para asegurar que los elementos existan antes de configurar las firmas
+        setTimeout(prepararCanvases, 500); 
     } else { document.getElementById('login-error').style.display = 'block'; }
 }
 
@@ -63,12 +64,9 @@ function agregarALista() {
     const cant = parseInt(document.getElementById('cantidad-input').value);
     const item = inventarioCompleto.find(i => i.codigo === cod);
     if (!item || isNaN(cant) || cant <= 0) return alert("Datos inválidos");
-    
-    // Alerta de stock pero permite continuar
     if (cant > item.stock) {
-        alert(`AVISO: La cantidad (${cant}) supera el stock (${item.stock}). Se registrará por posible desfase.`);
+        alert(`AVISO: La cantidad (${cant}) supera el stock (${item.stock}).`);
     }
-    
     listaSalida.push({ ...item, cantidadPedida: cant });
     renderLista();
     document.getElementById('cantidad-input').value = "";
@@ -93,14 +91,12 @@ function renderLista() {
 function quitar(idx) { listaSalida.splice(idx, 1); renderLista(); }
 
 // ========================================
-// LÓGICA DE FIRMAS (ENTREGA Y RECIBE)
+// LÓGICA DE FIRMAS REFORZADA (MOUSE Y TOUCH)
 // ========================================
 function prepararCanvases() {
-    // Configurar Firma Entrega
     canvasEntrega = document.getElementById('canvas-entrega');
     ctxEntrega = configurarCanvas(canvasEntrega);
     
-    // Configurar Firma Recibe
     canvasRecibe = document.getElementById('canvas-recibe');
     ctxRecibe = configurarCanvas(canvasRecibe);
 }
@@ -108,33 +104,56 @@ function prepararCanvases() {
 function configurarCanvas(canv) {
     if(!canv) return;
     const context = canv.getContext('2d');
+    
+    // Ajustar el tamaño interno del canvas al tamaño visual
     canv.width = canv.offsetWidth;
     canv.height = canv.offsetHeight;
+    
     context.lineWidth = 2;
     context.lineCap = 'round';
     context.strokeStyle = '#000';
 
-    const obtenerPos = (e) => {
+    function obtenerPos(e) {
         const rect = canv.getBoundingClientRect();
-        const pos = e.touches ? e.touches[0] : e;
-        return { x: pos.clientX - rect.left, y: pos.clientY - rect.top };
-    };
+        // Detectar si es touch o mouse
+        const clienteX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clienteY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+            x: clienteX - rect.left,
+            y: clienteY - rect.top
+        };
+    }
 
-    const iniciar = (e) => { dibujando = true; context.beginPath(); const p = obtenerPos(e); context.moveTo(p.x, p.y); };
-    const mover = (e) => { 
-        if(!dibujando) return; 
-        const p = obtenerPos(e); 
-        context.lineTo(p.x, p.y); 
-        context.stroke(); 
-        e.preventDefault(); 
-    };
-    
+    function iniciar(e) {
+        dibujando = true;
+        const p = obtenerPos(e);
+        context.beginPath();
+        context.moveTo(p.x, p.y);
+        // Evitar que la pantalla se mueva al firmar en celular
+        if (e.touches) e.preventDefault();
+    }
+
+    function mover(e) {
+        if (!dibujando) return;
+        const p = obtenerPos(e);
+        context.lineTo(p.x, p.y);
+        context.stroke();
+        if (e.touches) e.preventDefault();
+    }
+
+    function detener() {
+        dibujando = false;
+    }
+
+    // Eventos Mouse
     canv.addEventListener('mousedown', iniciar);
     canv.addEventListener('mousemove', mover);
-    canv.addEventListener('touchstart', iniciar);
-    canv.addEventListener('touchmove', mover);
-    window.addEventListener('mouseup', () => dibujando = false);
-    window.addEventListener('touchend', () => dibujando = false);
+    window.addEventListener('mouseup', detener);
+
+    // Eventos Touch (Celulares/Tablets)
+    canv.addEventListener('touchstart', iniciar, { passive: false });
+    canv.addEventListener('touchmove', mover, { passive: false });
+    canv.addEventListener('touchend', detener);
 
     return context;
 }
@@ -142,6 +161,10 @@ function configurarCanvas(canv) {
 function abrirFirma() {
     if(listaSalida.length === 0) return alert("Agregue materiales");
     document.getElementById('modal-firma').style.display = 'flex';
+    // Re-ajustar tamaño por si el modal cambió algo
+    setTimeout(() => {
+        prepararCanvases();
+    }, 200);
 }
 
 function cerrarFirma() { document.getElementById('modal-firma').style.display = 'none'; }
@@ -152,13 +175,10 @@ function limpiarFirma(tipo) {
 }
 
 function finalizarYGenerar() {
-    // Verificar si el que entrega firmó (Obligatorio)
     const entregaVacia = isCanvasVacio(canvasEntrega);
     if(entregaVacia) return alert("La firma del que entrega es obligatoria.");
 
     const firmaEntregaData = canvasEntrega.toDataURL('image/png');
-    
-    // Verificar si el que recibe firmó (Opcional)
     const recibeVacia = isCanvasVacio(canvasRecibe);
     const firmaRecibeData = recibeVacia ? null : canvasRecibe.toDataURL('image/png');
 
@@ -167,14 +187,17 @@ function finalizarYGenerar() {
 }
 
 function isCanvasVacio(canv) {
-    const blank = document.createElement('canvas');
-    blank.width = canv.width;
-    blank.height = canv.height;
-    return canv.toDataURL() === blank.toDataURL();
+    const context = canv.getContext('2d');
+    const pixelData = context.getImageData(0, 0, canv.width, canv.height).data;
+    // Revisar si hay algún pixel que no sea transparente
+    for (let i = 0; i < pixelData.length; i += 4) {
+        if (pixelData[i+3] !== 0) return false;
+    }
+    return true;
 }
 
 // ========================================
-// PDF CON DISEÑO ORIGINAL + 2 FIRMAS
+// PDF CON DISEÑO ORIGINAL
 // ========================================
 async function generarPDFTraslado(firmaEntrega, firmaRecibe) {
     const { jsPDF } = window.jspdf;
@@ -187,7 +210,7 @@ async function generarPDFTraslado(firmaEntrega, firmaRecibe) {
     doc.setDrawColor(0); doc.setLineWidth(0.5);
     doc.rect(10, 10, 190, 277); 
 
-    // 2. CAJETÍN SUPERIOR (Tu diseño original)
+    // 2. CAJETÍN SUPERIOR
     doc.rect(10, 10, 60, 30); 
     try { doc.addImage(logoUrl, 'PNG', 15, 13, 50, 24); } catch (e) {}
 
@@ -227,13 +250,10 @@ async function generarPDFTraslado(firmaEntrega, firmaRecibe) {
 
     // 5. SECCIÓN DE FIRMAS
     const finalY = 270;
-    
-    // Firma Entregado (Obligatoria)
     doc.addImage(firmaEntrega, 'PNG', 35, finalY - 25, 40, 20);
     doc.line(30, finalY, 90, finalY);
     doc.text("ENTREGADO POR (ASIGNADO)", 60, finalY + 5, {align: 'center'});
     
-    // Firma Recibido (Solo si existe)
     if(firmaRecibe) {
         doc.addImage(firmaRecibe, 'PNG', 125, finalY - 25, 40, 20);
     }
