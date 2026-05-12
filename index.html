@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ENEE-UTCD - Traslado de Materiales</title>
+    <title>ENEE - Traslado de Materiales</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -39,7 +39,6 @@
         <label>Contraseña:</label>
         <input type="password" id="pass" placeholder="Contraseña">
         <button class="btn-enviar" onclick="validarLogin()">INGRESAR</button>
-        <p id="login-error" style="color: #e74c3c; font-size: 0.8rem; margin-top: 10px; display: none;">Credenciales incorrectas</p>
     </div>
 </div>
 
@@ -60,39 +59,33 @@
         <input type="text" id="cuadrilla-recibe" placeholder="Nombre de cuadrilla">
 
         <div class="card" style="margin-top: 15px; border: 1px solid var(--accent);">
-            <h3 style="color: var(--accent); font-size: 0.9rem; margin-bottom: 10px;">DETALLE DE MATERIAL</h3>
-            
             <label>Tipo:</label>
-            <select id="filtro-tipo" onchange="filtrarMateriales()">
-                <option value="">Cargando tipos...</option>
-            </select>
-
+            <select id="filtro-tipo" onchange="filtrarMateriales()"></select>
             <label>Material:</label>
-            <select id="seleccion-material">
-                <option value="">Seleccione tipo primero</option>
-            </select>
-
+            <select id="seleccion-material"></select>
             <label>Cantidad:</label>
             <input type="number" id="cantidad-input" placeholder="0">
-
             <button type="button" class="btn-secundario" onclick="agregarALista()">+ AGREGAR A LA LISTA</button>
         </div>
 
-        <label style="margin-top: 20px; display: block;">Vista Previa del Informe:</label>
         <div class="card" style="padding: 10px; background: #1b2a36;">
-            <div style="display: grid; grid-template-columns: 2fr 4fr 2fr 1fr; gap: 5px; border-bottom: 1px solid var(--accent); padding-bottom: 5px; font-size: 0.7rem; color: var(--accent); font-weight: bold; text-align: center;">
-                <div>CÓDIGO</div>
-                <div>DESCRIPCIÓN</div>
-                <div>CANT.</div>
-                <div></div>
-            </div>
-            <div id="lista-previa" style="margin-top: 10px;">
-                <p style="font-size: 0.7rem; color: #9aa7b1; text-align: center;">Lista vacía</p>
-            </div>
+            <div id="lista-previa"></div>
         </div>
 
-        <button type="button" class="btn-enviar" onclick="generarPDFTraslado()">GENERAR PDF CON FORMATO</button>
+        <button type="button" class="btn-enviar" onclick="abrirFirma()">FIRMAR Y GENERAR PDF</button>
     </form>
+</div>
+
+<div id="modal-firma" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; justify-content:center; align-items:center; flex-direction:column;">
+    <div style="background:white; padding:20px; border-radius:10px; text-align:center; width:90%; max-width:400px;">
+        <h3 style="color:black; margin-bottom:10px;">Firma del que entrega</h3>
+        <canvas id="canvas-firma" style="border:2px solid #000; background:#fff; width:100%; height:200px; touch-action:none;"></canvas>
+        <div style="margin-top:15px; display:flex; gap:10px;">
+            <button class="btn-secundario" style="color:black; border-color:black;" onclick="limpiarFirma()">LIMPIAR</button>
+            <button class="btn-enviar" style="margin:0;" onclick="finalizarYGenerar()">GUARDAR Y GENERAR</button>
+        </div>
+        <button style="margin-top:10px; background:none; border:none; color:red; cursor:pointer;" onclick="cerrarFirma()">Cancelar</button>
+    </div>
 </div>
 
 <script src="app.js"></script>
