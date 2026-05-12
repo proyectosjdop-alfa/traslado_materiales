@@ -101,11 +101,11 @@ async function generarPDFTraslado() {
 
     // 2. CAJETÍN SUPERIOR (Dividido en 3 partes como el Excel)
     // Parte 1: LOGO (Izquierda)
-    doc.rect(10, 10, 50, 30); 
-    try { doc.addImage(logoUrl, 'PNG', 15, 13, 40, 24); } catch (e) {}
+    doc.rect(10, 10, 60, 30); 
+    try { doc.addImage(logoUrl, 'PNG', 15, 13, 50, 24); } catch (e) {}
 
     // Parte 2: TÍTULO Y SECTOR (Centro)
-    doc.rect(60, 10, 85, 30);
+    doc.rect(70, 10, 75, 30);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
     doc.text("TRASLADO DE MATERIALES", 102.5, 22, {align: 'center'});
@@ -115,11 +115,11 @@ async function generarPDFTraslado() {
     // Parte 3: CONTROL (Derecha - Código, Versión, Fecha)
     doc.rect(145, 10, 55, 30);
     doc.setFontSize(8);
-    doc.text("Código:", 147, 18); doc.text("N/A", 175, 18); // Puedes cambiar N/A por un código real
+    doc.text("Código:", 147, 18); doc.text("", 175, 18); // Puedes cambiar N/A por un código real
     doc.line(145, 20, 200, 20); // Línea divisoria interna
     doc.text("Versión:", 147, 24); doc.text("1", 175, 24);
     doc.line(145, 26, 200, 26); // Línea divisoria interna
-    doc.text("Fecha:", 147, 29); doc.text(new Date().toLocaleDateString(), 175, 29);
+    doc.text("Fecha:", 147, 29); doc.text("", 175, 29);
 
     // 3. BLOQUE DE INFORMACIÓN GENERAL
     doc.setFontSize(9);
@@ -141,7 +141,7 @@ async function generarPDFTraslado() {
         headStyles: { fillColor: [244, 196, 48], textColor: 0, halign: 'center', fontSize: 9 },
         columnStyles: { 0: { halign: 'center', cellWidth: 35 }, 2: { halign: 'center', cellWidth: 25 } },
         styles: { fontSize: 8 },
-        margin: { left: 10, right: 10 }
+        margin: { left: 15, right: 15 }
     });
 
     // 5. SECCIÓN DE FIRMAS (Al final del marco)
