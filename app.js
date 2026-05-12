@@ -65,7 +65,7 @@ function agregarALista() {
     const item = inventarioCompleto.find(i => i.codigo === cod);
     if (!item || isNaN(cant) || cant <= 0) return alert("Datos inválidos");
     if (cant > item.stock) {
-        alert(`AVISO: La cantidad (${cant}) supera el stock (${item.stock}).`);
+        alert(`AVISO: La cantidad (${cant}) supera el stock (${item.stock}). Se registrará por posible desfase.`);
     }
     listaSalida.push({ ...item, cantidadPedida: cant });
     renderLista();
