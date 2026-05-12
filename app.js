@@ -71,8 +71,8 @@ function renderLista() {
     }
     div.innerHTML = listaSalida.map((m, index) => `
         <div style="display: grid; grid-template-columns: 2fr 4fr 2fr 1fr; gap: 5px; align-items: center; border-bottom: 1px solid #2c3e50; padding: 8px 0; font-size: 0.7rem; text-align: center;">
-            <div style="color: var(--accent);">${m.codigo}</div>
-            <div style="text-align: left;">${m.nombre}</div>
+            <div style="color: var(--accent); font-weight: bold;">${m.codigo}</div>
+            <div style="text-align: left; padding-left: 5px;">${m.nombre}</div>
             <div>${m.cantidadPedida}</div>
             <div onclick="quitar(${index})" style="color:#e74c3c; cursor:pointer;"><i class="fas fa-trash"></i></div>
         </div>
@@ -90,47 +90,55 @@ async function generarPDFTraslado() {
 
     if (listaSalida.length === 0) return alert("Agregue materiales");
 
-    // 1. MARCO EXTERIOR (Como en Poda)
+    // 1. MARCO EXTERIOR
     doc.setDrawColor(0); doc.setLineWidth(0.5);
-    doc.rect(5, 5, 200, 287); 
+    doc.rect(10, 10, 190, 277); 
 
-    // 2. ENCABEZADO CON LOGO CENTRADO
-    try { doc.addImage(logoUrl, 'PNG', 85, 12, 40, 22); } catch (e) {}
-    
-    doc.setFont("helvetica", "bold"); doc.setFontSize(14);
-    doc.text("UNIDAD TÉCNICA DE CONTROL DE DISTRIBUCIÓN", 105, 42, {align: 'center'});
-    doc.setFontSize(12);
-    doc.text("COMPROBANTE DE TRASLADO DE MATERIALES", 105, 48, {align: 'center'});
+    // 2. CAJETÍN DE ENCABEZADO (Cuadrícula superior)
+    // Logo (Celda Izquierda)
+    doc.rect(10, 10, 60, 30); 
+    try { doc.addImage(logoUrl, 'PNG', 20, 13, 40, 24); } catch (e) {}
 
-    // 3. BLOQUE DE INFORMACIÓN (Con recuadro gris suave)
-    doc.setFillColor(240, 240, 240); doc.rect(10, 55, 190, 25, 'F');
-    doc.setDrawColor(150); doc.rect(10, 55, 190, 25);
-    
-    doc.setFontSize(10); doc.setTextColor(0);
-    doc.text(`SECTOR ORIGEN: ${sectorActivo}`, 15, 62);
-    doc.text(`FECHA DE EMISIÓN: ${new Date().toLocaleDateString()}`, 130, 62);
-    doc.text(`ENCARGADO ASIGNACIÓN: ${encargado.toUpperCase()}`, 15, 69);
-    doc.text(`CUADRILLA / RECIBE: ${cuadrilla.toUpperCase()}`, 15, 76);
+    // Título Central (Celda Centro)
+    doc.rect(70, 10, 80, 30);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+    doc.text("UNIDAD TÉCNICA DE CONTROL", 110, 20, {align: 'center'});
+    doc.text("DE DISTRIBUCIÓN", 110, 25, {align: 'center'});
+    doc.setFontSize(11);
+    doc.text("TRASLADO DE MATERIALES", 110, 33, {align: 'center'});
+
+    // Info Derecha (Fecha y Sector)
+    doc.rect(150, 10, 50, 30);
+    doc.setFontSize(8);
+    doc.text(`FECHA: ${new Date().toLocaleDateString()}`, 155, 18);
+    doc.text(`SECTOR: ${sectorActivo}`, 155, 26);
+
+    // 3. BLOQUE DE DATOS DEL PERSONAL
+    doc.rect(10, 40, 190, 20);
+    doc.setFontSize(9);
+    doc.text(`ENCARGADO ASIGNACIÓN: ${encargado.toUpperCase()}`, 15, 48);
+    doc.text(`CUADRILLA / RECIBE: ${cuadrilla.toUpperCase()}`, 15, 55);
 
     // 4. TABLA DE MATERIALES
     const tablaBody = listaSalida.map(m => [m.codigo, m.nombre, m.cantidadPedida]);
     doc.autoTable({
-        startY: 85,
+        startY: 65,
         head: [['CÓDIGO', 'DESCRIPCIÓN DEL MATERIAL', 'CANTIDAD']],
         body: tablaBody,
         theme: 'grid',
-        headStyles: { fillColor: [244, 196, 48], textColor: 0, halign: 'center' },
+        headStyles: { fillColor: [244, 196, 48], textColor: 0, halign: 'center', fontSize: 9 },
         columnStyles: { 0: { halign: 'center', cellWidth: 35 }, 2: { halign: 'center', cellWidth: 25 } },
+        styles: { fontSize: 8 },
         margin: { left: 10, right: 10 }
     });
 
     // 5. ÁREA DE FIRMAS
-    const finalY = Math.max(doc.lastAutoTable.finalY + 30, 250);
+    const finalY = 270;
     doc.line(30, finalY, 90, finalY);
-    doc.text("ENTREGADO POR", 60, finalY + 5, {align: 'center'});
+    doc.text("ENTREGADO POR (ASIGNADO)", 60, finalY + 5, {align: 'center'});
     
     doc.line(120, finalY, 180, finalY);
-    doc.text("RECIBIDO CONFORME", 150, finalY + 5, {align: 'center'});
+    doc.text("RECIBIDO CONFORME (CUADRILLA)", 150, finalY + 5, {align: 'center'});
 
-    doc.save(`Traslado_ENEE_${sectorActivo}.pdf`);
+    doc.save(`Traslado_UTCD_${sectorActivo}.pdf`);
 }
