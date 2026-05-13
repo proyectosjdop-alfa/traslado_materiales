@@ -31,10 +31,10 @@ async function cargarTodoDesdeGoogle() {
         inventarioCompleto = filasMat
             .map(c => ({ 
                 sector: c[0],   // Columna A
-                codigo: c[2],   // Columna C
-                nombre: c[3],   // Columna D
-                unidad: c[4],   // Columna E
-                stock: parseInt(c[5]) || 0, // Columna F
+                codigo: c[3],   // Columna D
+                nombre: c[4],   // Columna E
+                unidad: c[5],   // Columna F
+                stock: parseInt(c[6]) || 0, // Columna G
                 tipo: c[7]      // Columna H (NOMBRETIPOMATERIAL)
             }))
             .filter(i => i.sector && i.sector.toUpperCase() === sectorActivo);
