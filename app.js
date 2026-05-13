@@ -2,7 +2,6 @@ var sectorActivo = "";
 var inventarioCompleto = [];
 var listaSalida = [];
 
-// Variables para la lógica de firmas
 var canvasEntrega, ctxEntrega;
 var canvasRecibe, ctxRecibe;
 var dibujando = false;
@@ -14,25 +13,58 @@ const USUARIOS = {
     "santa cruz": "enee2026", "tegucigalpa": "enee2026", "tocoa": "enee2026"
 };
 
-async function cargarDatosGoogleSheets() {
-    const sheetID = "15FfY5O9CXIBA0RUcwqJMqHLbrOFRmu4ssgZ9xhPa44A";
-    const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:csv`;
+const SHEET_ID = "15FfY5O9CXIBA0RUcwqJMqHLbrOFRmu4ssgZ9xhPa44A";
+
+// Función genérica para obtener datos de una hoja específica
+async function fetchSheetData(sheetName) {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+    const res = await fetch(url);
+    const data = await res.text();
+    return data.split('\n').slice(1).map(f => {
+        return f.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(x => x.replace(/"/g, '').trim());
+    });
+}
+
+async function cargarTodoDesdeGoogle() {
     try {
-        const res = await fetch(url);
-        const data = await res.text();
-        const filas = data.split('\n').slice(1);
-        inventarioCompleto = filas.map(f => {
-            const c = f.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(x => x.replace(/"/g, ''));
-            return { 
+        // 1. Cargar y filtrar Materiales por Sector
+        const filasMat = await fetchSheetData("Stock_Materiales");
+        inventarioCompleto = filasMat
+            .map(c => ({ 
+                sector: c[0], 
                 codigo: c[2], 
                 nombre: c[3], 
                 unidad: c[4], 
                 stock: parseInt(c[5]) || 0, 
                 tipo: c[6] 
-            };
+            }))
+            .filter(i => i.sector && i.sector.toUpperCase() === sectorActivo);
+
+        // 2. Cargar y filtrar Encargados
+        const filasEnc = await fetchSheetData("ENC_ASIG");
+        const selectEnc = document.getElementById('resp-traslado');
+        selectEnc.innerHTML = '<option value="">Seleccione Encargado...</option>';
+        filasEnc.forEach(c => {
+            if (c[0] && c[0].toUpperCase() === sectorActivo) {
+                selectEnc.innerHTML += `<option value="${c[1]}">${c[1]}</option>`;
+            }
         });
+
+        // 3. Cargar y filtrar Cuadrillas
+        const filasCuad = await fetchSheetData("CUADRILLAS");
+        const selectCuad = document.getElementById('cuadrilla-recibe');
+        selectCuad.innerHTML = '<option value="">Seleccione Cuadrilla...</option>';
+        filasCuad.forEach(c => {
+            if (c[0] && c[0].toUpperCase() === sectorActivo) {
+                selectCuad.innerHTML += `<option value="${c[1]}">${c[1]}</option>`;
+            }
+        });
+
         llenarTipos();
-    } catch (e) { alert("Error cargando Inventario"); }
+    } catch (e) { 
+        console.error(e);
+        alert("Error cargando datos del Sector"); 
+    }
 }
 
 function validarLogin() {
@@ -46,7 +78,7 @@ function validarLogin() {
         document.getElementById('login-container').style.display = 'none';
         document.getElementById('form-traslado-container').style.display = 'block';
         document.getElementById('user-display').innerText = "SECTOR: " + sectorActivo;
-        cargarDatosGoogleSheets();
+        cargarTodoDesdeGoogle();
         setTimeout(prepararCanvases, 500); 
     } else { 
         if(errorDiv) errorDiv.style.display = 'block';
@@ -61,7 +93,6 @@ function llenarTipos() {
     tipos.forEach(t => { if(t) select.innerHTML += `<option value="${t}">${t}</option>`; });
 }
 
-// CORREGIDO: Ahora vuelve a mostrar el Stock en el selector junto con la unidad
 function filtrarMateriales() {
     const tipo = document.getElementById('filtro-tipo').value;
     const select = document.getElementById('seleccion-material');
@@ -146,6 +177,9 @@ function configurarCanvas(canv) {
 
 function abrirFirma() {
     if(listaSalida.length === 0) return alert("Agregue materiales");
+    if(!document.getElementById('resp-traslado').value || !document.getElementById('cuadrilla-recibe').value) {
+        return alert("Seleccione Encargado y Cuadrilla");
+    }
     document.getElementById('modal-firma').style.display = 'flex';
     setTimeout(prepararCanvases, 200);
 }
