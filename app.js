@@ -15,7 +15,6 @@ const USUARIOS = {
 
 const SHEET_ID = "15FfY5O9CXIBA0RUcwqJMqHLbrOFRmu4ssgZ9xhPa44A";
 
-// Función genérica para obtener datos de una hoja específica
 async function fetchSheetData(sheetName) {
     const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
     const res = await fetch(url);
@@ -27,20 +26,20 @@ async function fetchSheetData(sheetName) {
 
 async function cargarTodoDesdeGoogle() {
     try {
-        // 1. Cargar y filtrar Materiales por Sector
+        // 1. Cargar Materiales
         const filasMat = await fetchSheetData("Stock_Materiales");
         inventarioCompleto = filasMat
             .map(c => ({ 
-                sector: c[0], 
-                codigo: c[2], 
-                nombre: c[3], 
-                unidad: c[4], 
-                stock: parseInt(c[5]) || 0, 
-                tipo: c[6] 
+                sector: c[0],   // Columna A
+                codigo: c[2],   // Columna C
+                nombre: c[3],   // Columna D
+                unidad: c[4],   // Columna E
+                stock: parseInt(c[5]) || 0, // Columna F
+                tipo: c[7]      // Columna H (NOMBRETIPOMATERIAL)
             }))
             .filter(i => i.sector && i.sector.toUpperCase() === sectorActivo);
 
-        // 2. Cargar y filtrar Encargados
+        // 2. Cargar Encargados
         const filasEnc = await fetchSheetData("ENC_ASIG");
         const selectEnc = document.getElementById('resp-traslado');
         selectEnc.innerHTML = '<option value="">Seleccione Encargado...</option>';
@@ -50,7 +49,7 @@ async function cargarTodoDesdeGoogle() {
             }
         });
 
-        // 3. Cargar y filtrar Cuadrillas
+        // 3. Cargar Cuadrillas
         const filasCuad = await fetchSheetData("CUADRILLAS");
         const selectCuad = document.getElementById('cuadrilla-recibe');
         selectCuad.innerHTML = '<option value="">Seleccione Cuadrilla...</option>';
@@ -61,10 +60,37 @@ async function cargarTodoDesdeGoogle() {
         });
 
         llenarTipos();
+        
     } catch (e) { 
         console.error(e);
         alert("Error cargando datos del Sector"); 
     }
+}
+
+function llenarTipos() {
+    const select = document.getElementById('filtro-tipo');
+    const tipos = [...new Set(inventarioCompleto.map(i => i.tipo))].filter(t => t).sort();
+    
+    select.innerHTML = '<option value="">Seleccione Tipo...</option>';
+    if (tipos.length === 0) {
+        select.innerHTML = '<option value="">No hay materiales para este sector</option>';
+    } else {
+        tipos.forEach(t => { 
+            select.innerHTML += `<option value="${t}">${t}</option>`; 
+        });
+    }
+}
+
+function filtrarMateriales() {
+    const tipo = document.getElementById('filtro-tipo').value;
+    const select = document.getElementById('seleccion-material');
+    select.innerHTML = '<option value="">Seleccione Material...</option>';
+    
+    inventarioCompleto
+        .filter(i => i.tipo === tipo)
+        .forEach(i => {
+            select.innerHTML += `<option value="${i.codigo}">[${i.codigo}] - ${i.nombre} (${i.unidad}) - Stock: ${i.stock}</option>`;
+        });
 }
 
 function validarLogin() {
@@ -84,22 +110,6 @@ function validarLogin() {
         if(errorDiv) errorDiv.style.display = 'block';
         document.getElementById('pass').value = "";
     }
-}
-
-function llenarTipos() {
-    const select = document.getElementById('filtro-tipo');
-    const tipos = [...new Set(inventarioCompleto.map(i => i.tipo))].sort();
-    select.innerHTML = '<option value="">Seleccione Tipo...</option>';
-    tipos.forEach(t => { if(t) select.innerHTML += `<option value="${t}">${t}</option>`; });
-}
-
-function filtrarMateriales() {
-    const tipo = document.getElementById('filtro-tipo').value;
-    const select = document.getElementById('seleccion-material');
-    select.innerHTML = '<option value="">Seleccione Material...</option>';
-    inventarioCompleto.filter(i => i.tipo === tipo).forEach(i => {
-        select.innerHTML += `<option value="${i.codigo}">[${i.codigo}] - ${i.nombre} (${i.unidad}) - Stock: ${i.stock}</option>`;
-    });
 }
 
 function agregarALista() {
