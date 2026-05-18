@@ -11,15 +11,16 @@
 </head>
 <body>
 
+<!-- LOGIN -->
 <div id="login-container" class="container">
     <header>
-        <div style="background-color: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: center;">
-            <img src="https://raw.githubusercontent.com/proyectosjdop-alfa/traslado_materiales/refs/heads/main/imagenes/UTCD%20Vertical.png" alt="Logo ENEE" style="max-width: 250px; height: auto;">
+        <div style="background-color:white;padding:15px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:center;">
+            <img src="https://raw.githubusercontent.com/proyectosjdop-alfa/traslado_materiales/refs/heads/main/imagenes/UTCD%20Vertical.png" alt="Logo ENEE" style="max-width:250px;height:auto;">
         </div>
         <h1>Acceso Traslados</h1>
     </header>
     <div class="card">
-        <div id="login-error" style="display: none; color: #ff4d4d; text-align: center; margin-bottom: 10px; font-size: 0.9rem;">Contraseña incorrecta</div>
+        <div id="login-error" style="display:none;color:#ff4d4d;text-align:center;margin-bottom:10px;font-size:0.9rem;">Contraseña incorrecta</div>
         <label>Sector:</label>
         <select id="user">
             <option value="">Seleccione...</option>
@@ -38,68 +39,132 @@
             <option value="tocoa">TOCOA</option>
         </select>
         <label>Contraseña:</label>
-        <input type="password" id="pass" placeholder="Contraseña">
+        <div class="password-wrapper">
+            <input type="password" id="pass" placeholder="Contraseña">
+            <span class="eye-icon" onclick="togglePassword()">
+                <i id="eye-icon" class="fas fa-eye"></i>
+            </span>
+        </div>
         <button class="btn-enviar" onclick="validarLogin()">INGRESAR</button>
     </div>
 </div>
 
-<div id="form-traslado-container" class="container" style="display: none;">
+<!-- SUBMENÚ -->
+<div id="submenu-container" class="container" style="display:none;">
     <header>
-        <div style="background-color: white; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: center;">
-            <img src="https://raw.githubusercontent.com/proyectosjdop-alfa/traslado_materiales/refs/heads/main/imagenes/UTCD%20Vertical.png" alt="Logo ENEE" style="max-width: 180px; height: auto;">
+        <div style="background-color:white;padding:10px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:center;">
+            <img src="https://raw.githubusercontent.com/proyectosjdop-alfa/traslado_materiales/refs/heads/main/imagenes/UTCD%20Vertical.png" alt="Logo ENEE" style="max-width:180px;height:auto;">
+        </div>
+        <h1>MENÚ PRINCIPAL</h1>
+        <p id="submenu-sector" style="color:var(--accent);font-weight:bold;font-size:0.85rem;text-align:center;"></p>
+    </header>
+    <div style="display:flex;flex-direction:column;gap:15px;margin-top:10px;">
+        <button class="btn-menu" onclick="irA('traslado')">
+            <i class="fas fa-truck"></i>
+            <span>TRASLADOS</span>
+            <small>Registro de salida de materiales</small>
+        </button>
+        <button class="btn-menu" onclick="irA('solicitud')">
+            <i class="fas fa-clipboard-list"></i>
+            <span>SOLICITUDES</span>
+            <small>Solicitud de materiales por cuadrilla</small>
+        </button>
+    </div>
+</div>
+
+<!-- FORMULARIO TRASLADO -->
+<div id="form-traslado-container" class="container" style="display:none;">
+    <header>
+        <div style="background-color:white;padding:10px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:center;">
+            <img src="https://raw.githubusercontent.com/proyectosjdop-alfa/traslado_materiales/refs/heads/main/imagenes/UTCD%20Vertical.png" alt="Logo ENEE" style="max-width:180px;height:auto;">
         </div>
         <h1>TRASLADO DE MATERIALES</h1>
-        <p id="user-display" style="color: var(--accent); font-weight: bold; font-size: 0.8rem;"></p>
+        <p id="user-display" style="color:var(--accent);font-weight:bold;font-size:0.8rem;"></p>
     </header>
-
+    <button class="btn-volver" onclick="volverMenu()"><i class="fas fa-arrow-left"></i> Volver al Menú</button>
     <form id="form-traslado">
         <label>Encargado de asignar:</label>
-        <select id="resp-traslado">
-            <option value="">Cargando encargados...</option>
-        </select>
-
+        <select id="resp-traslado"><option value="">Cargando encargados...</option></select>
         <label>Cuadrilla que recibe:</label>
-        <select id="cuadrilla-recibe">
-            <option value="">Cargando cuadrillas...</option>
-        </select>
-
-        <div class="card" style="margin-top: 15px; border: 1px solid var(--accent);">
+        <select id="cuadrilla-recibe"><option value="">Cargando cuadrillas...</option></select>
+        <div class="card" style="margin-top:15px;border:1px solid var(--accent);">
             <label>Tipo:</label>
             <select id="filtro-tipo" onchange="filtrarMateriales()"></select>
             <label>Material:</label>
             <select id="seleccion-material"></select>
             <label>Cantidad:</label>
             <input type="number" id="cantidad-input" placeholder="0">
-            <button type="button" class="btn-secundario" onclick="agregarALista()">+ AGREGAR A LA LISTA</button>
+            <button type="button" class="btn-secundario" onclick="agregarALista('traslado')">+ AGREGAR A LA LISTA</button>
         </div>
-
-        <div class="card" style="padding: 10px; background: #1b2a36;">
+        <div class="card" style="padding:10px;background:#1b2a36;">
             <div id="lista-previa"></div>
         </div>
-
-        <button type="button" class="btn-enviar" onclick="abrirFirma()">PASAR A FIRMAS Y GENERAR</button>
+        <button type="button" class="btn-enviar" onclick="abrirFirma('traslado')">PASAR A FIRMAS Y GENERAR</button>
     </form>
 </div>
 
-<div id="modal-firma" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:2000; justify-content:center; align-items:center; overflow-y: auto;">
-    <div style="background:white; padding:15px; border-radius:10px; text-align:center; width:95%; max-width:450px; margin: 20px auto;">
-        <h2 style="color:#1b2a36; margin-bottom:15px; font-size: 1.2rem;">Panel de Firmas</h2>
-        
-        <div style="margin-bottom: 20px;">
-            <p style="color:black; font-weight:bold; font-size:0.9rem; margin-bottom:5px;">Firma: Entregado por (Obligatorio)</p>
-            <canvas id="canvas-entrega" style="border:2px solid #333; background:#fff; width:100%; height:130px; touch-action:none; border-radius:5px;"></canvas>
-            <button type="button" onclick="limpiarFirma('entrega')" style="margin-top:5px; padding:5px 10px; font-size:0.7rem; cursor:pointer;">Limpiar Firma Entrega</button>
+<!-- FORMULARIO SOLICITUD -->
+<div id="form-solicitud-container" class="container" style="display:none;">
+    <header>
+        <div style="background-color:white;padding:10px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:center;">
+            <img src="https://raw.githubusercontent.com/proyectosjdop-alfa/traslado_materiales/refs/heads/main/imagenes/UTCD%20Vertical.png" alt="Logo ENEE" style="max-width:180px;height:auto;">
         </div>
-
-        <div style="margin-bottom: 20px;">
-            <p style="color:black; font-weight:bold; font-size:0.9rem; margin-bottom:5px;">Firma: Recibido por (Opcional)</p>
-            <canvas id="canvas-recibe" style="border:2px solid #333; background:#fff; width:100%; height:130px; touch-action:none; border-radius:5px;"></canvas>
-            <button type="button" onclick="limpiarFirma('recibe')" style="margin-top:5px; padding:5px 10px; font-size:0.7rem; cursor:pointer;">Limpiar Firma Recibe</button>
+        <h1>SOLICITUD DE MATERIALES</h1>
+        <p id="user-display-sol" style="color:var(--accent);font-weight:bold;font-size:0.8rem;"></p>
+    </header>
+    <button class="btn-volver" onclick="volverMenu()"><i class="fas fa-arrow-left"></i> Volver al Menú</button>
+    <form id="form-solicitud">
+        <label>Cuadrilla que solicita:</label>
+        <select id="cuadrilla-solicita"><option value="">Cargando cuadrillas...</option></select>
+        <div class="card" style="margin-top:15px;border:1px solid var(--accent);">
+            <label>Tipo:</label>
+            <select id="filtro-tipo-sol" onchange="filtrarMaterialesSol()"></select>
+            <label>Material:</label>
+            <select id="seleccion-material-sol"></select>
+            <label>Cantidad:</label>
+            <input type="number" id="cantidad-input-sol" placeholder="0">
+            <button type="button" class="btn-secundario" onclick="agregarALista('solicitud')">+ AGREGAR A LA LISTA</button>
         </div>
+        <div class="card" style="padding:10px;background:#1b2a36;">
+            <div id="lista-previa-sol"></div>
+        </div>
+        <button type="button" class="btn-enviar" onclick="abrirFirma('solicitud')">PASAR A FIRMA Y GENERAR</button>
+    </form>
+</div>
 
-        <div style="display:flex; flex-direction:column; gap:10px;">
-            <button class="btn-enviar" style="margin:0; width:100%;" onclick="finalizarYGenerar()">GUARDAR Y GENERAR PDF</button>
-            <button style="background:none; border:none; color:#777; cursor:pointer; text-decoration:underline;" onclick="cerrarFirma()">Regresar al formulario</button>
+<!-- MODAL FIRMAS TRASLADO -->
+<div id="modal-firma" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:2000;justify-content:center;align-items:center;overflow-y:auto;">
+    <div style="background:white;padding:15px;border-radius:10px;text-align:center;width:95%;max-width:450px;margin:20px auto;">
+        <h2 style="color:#1b2a36;margin-bottom:15px;font-size:1.2rem;">Panel de Firmas</h2>
+        <div style="margin-bottom:20px;">
+            <p style="color:black;font-weight:bold;font-size:0.9rem;margin-bottom:5px;">Firma: Entregado por (Obligatorio)</p>
+            <canvas id="canvas-entrega" style="border:2px solid #333;background:#fff;width:100%;height:130px;touch-action:none;border-radius:5px;"></canvas>
+            <button type="button" onclick="limpiarFirma('entrega')" style="margin-top:5px;padding:5px 10px;font-size:0.7rem;cursor:pointer;">Limpiar Firma Entrega</button>
+        </div>
+        <div style="margin-bottom:20px;">
+            <p style="color:black;font-weight:bold;font-size:0.9rem;margin-bottom:5px;">Firma: Recibido por (Opcional)</p>
+            <canvas id="canvas-recibe" style="border:2px solid #333;background:#fff;width:100%;height:130px;touch-action:none;border-radius:5px;"></canvas>
+            <button type="button" onclick="limpiarFirma('recibe')" style="margin-top:5px;padding:5px 10px;font-size:0.7rem;cursor:pointer;">Limpiar Firma Recibe</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            <button class="btn-enviar" style="margin:0;width:100%;" onclick="finalizarYGenerar('traslado')">GUARDAR Y GENERAR PDF</button>
+            <button style="background:none;border:none;color:#777;cursor:pointer;text-decoration:underline;" onclick="cerrarFirma('traslado')">Regresar al formulario</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL FIRMA SOLICITUD -->
+<div id="modal-firma-sol" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:2000;justify-content:center;align-items:center;overflow-y:auto;">
+    <div style="background:white;padding:15px;border-radius:10px;text-align:center;width:95%;max-width:450px;margin:20px auto;">
+        <h2 style="color:#1b2a36;margin-bottom:15px;font-size:1.2rem;">Firma del Técnico</h2>
+        <div style="margin-bottom:20px;">
+            <p style="color:black;font-weight:bold;font-size:0.9rem;margin-bottom:5px;">Firma: Técnico de la Cuadrilla (Obligatorio)</p>
+            <canvas id="canvas-tecnico" style="border:2px solid #333;background:#fff;width:100%;height:130px;touch-action:none;border-radius:5px;"></canvas>
+            <button type="button" onclick="limpiarFirma('tecnico')" style="margin-top:5px;padding:5px 10px;font-size:0.7rem;cursor:pointer;">Limpiar Firma</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            <button class="btn-enviar" style="margin:0;width:100%;" onclick="finalizarYGenerar('solicitud')">GUARDAR Y GENERAR PDF</button>
+            <button style="background:none;border:none;color:#777;cursor:pointer;text-decoration:underline;" onclick="cerrarFirma('solicitud')">Regresar al formulario</button>
         </div>
     </div>
 </div>
