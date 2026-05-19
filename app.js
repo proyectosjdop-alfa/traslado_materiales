@@ -3,6 +3,24 @@ var inventarioCompleto = [];
 var listaSalida = [];       // lista para traslado
 var listaSolicitud = [];    // lista para solicitud
 
+// ── Reemplaza con la URL de tu Worker tras desplegarlo ──────────────────────
+const WORKER_URL = "https://traslados-api.projects-jdop.workers.dev";
+
+async function enviarACloudflare(endpoint, formData) {
+    try {
+        const res = await fetch(`${WORKER_URL}${endpoint}`, {
+            method: "POST",
+            body: formData
+        });
+        const data = await res.json();
+        if (!data.ok) console.error("Error Cloudflare:", data.error);
+        return data;
+    } catch (e) {
+        console.error("No se pudo conectar al Worker:", e);
+        return { ok: false };
+    }
+}
+
 var canvasEntrega, ctxEntrega;
 var canvasRecibe,  ctxRecibe;
 var canvasTecnico, ctxTecnico;
@@ -339,7 +357,22 @@ async function generarPDFTraslado(firmaEntrega, firmaRecibe) {
     doc.line(120, finalY, 180, finalY);
     doc.text("RECIBIDO CONFORME (CUADRILLA)", 150, finalY + 5, { align: 'center' });
 
-    doc.save(`Traslado_Material_${sectorActivo}.pdf`);
+    // Descargar localmente
+    const fecha = new Date().toLocaleDateString('es-HN').replace(/\//g, '-');
+    const nombreArchivo = `Traslado_${fecha}_${sectorActivo}_${cuadrilla}`
+        .replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
+    doc.save(`${nombreArchivo}.pdf`);
+
+    // Enviar a Cloudflare D1 + R2
+    const pdfBlob = doc.output('blob');
+    const fd = new FormData();
+    fd.append("fecha",     fecha);
+    fd.append("encargado", encargado);
+    fd.append("cuadrilla", cuadrilla);
+    fd.append("sector",    sectorActivo);
+    fd.append("pdf",       pdfBlob, `${nombreArchivo}.pdf`);
+    const resultado = await enviarACloudflare("/guardar-traslado", fd);
+    if (resultado.ok) console.log("✅ Traslado guardado en Cloudflare:", resultado.pdf_url);
 }
 
 // ─── PDF SOLICITUD ───────────────────────────────────────────────────────────
@@ -393,6 +426,19 @@ async function generarPDFSolicitud(firmaTecnico) {
     doc.line(65, finalY, 145, finalY);
     doc.text("TÉCNICO DE LA CUADRILLA", 105, finalY + 5, { align: 'center' });
 
-    doc.save(`Solicitud_Materiales_${sectorActivo}.pdf`);
-}
+    // Descargar localmente
+    const fecha = new Date().toLocaleDateString('es-HN').replace(/\//g, '-');
+    const nombreArchivo = `Solicitud_${fecha}_${sectorActivo}_${cuadrilla}`
+        .replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
+    doc.save(`${nombreArchivo}.pdf`);
 
+    // Enviar a Cloudflare D1 + R2
+    const pdfBlob = doc.output('blob');
+    const fd = new FormData();
+    fd.append("fecha",     fecha);
+    fd.append("cuadrilla", cuadrilla);
+    fd.append("sector",    sectorActivo);
+    fd.append("pdf",       pdfBlob, `${nombreArchivo}.pdf`);
+    const resultado = await enviarACloudflare("/guardar-solicitud", fd);
+    if (resultado.ok) console.log("✅ Solicitud guardada en Cloudflare:", resultado.pdf_url);
+}
