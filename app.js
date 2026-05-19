@@ -4,7 +4,7 @@ var listaSalida = [];       // lista para traslado
 var listaSolicitud = [];    // lista para solicitud
 
 // ── Reemplaza con la URL de tu Worker tras desplegarlo ──────────────────────
-const WORKER_URL = "https://traslados-api.projects-jdop.workers.dev";
+const WORKER_URL = "https://traslados-api.proyectos-jdop.workers.dev";
 
 async function enviarACloudflare(endpoint, formData) {
     try {
